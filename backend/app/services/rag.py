@@ -7,22 +7,6 @@ if not GOOGLE_API_KEY:
 
 genai.configure(api_key=GOOGLE_API_KEY)
 
-def generate_embedding(text: str) -> list[float]:
-    """
-    Generates an embedding for the given text using Google's text-embedding-004 model.
-    """
-    try:
-        result = genai.embed_content(
-            model="models/text-embedding-004",
-            content=text,
-            task_type="retrieval_document",
-            title="Product Embedding"
-        )
-        return result['embedding']
-    except Exception as e:
-        print(f"Error generating embedding: {e}")
-        return []
-
 def search_products(query: str, match_threshold: float = 0.5, match_count: int = 5):
     """
     Searches for products using vector similarity.
@@ -43,6 +27,7 @@ def search_products(query: str, match_threshold: float = 0.5, match_count: int =
         return []
     
     try:
+        # 1. Get similar product IDs from vector search
         response = supabase.rpc(
             'match_products',
             {
@@ -51,7 +36,18 @@ def search_products(query: str, match_threshold: float = 0.5, match_count: int =
                 'match_count': match_count
             }
         ).execute()
-        return response.data
+        
+        matches = response.data
+        if not matches:
+            return []
+            
+        # 2. Extract Product IDs
+        product_ids = [match['product_id'] for match in matches]
+        
+        # 3. Fetch full product details
+        products_response = supabase.table("products").select("*").in_("id", product_ids).execute()
+        return products_response.data
+        
     except Exception as e:
         print(f"Error searching products: {e}")
         return []
