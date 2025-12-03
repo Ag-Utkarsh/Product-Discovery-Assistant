@@ -1,162 +1,120 @@
 # Product Discovery Assistant
 
-A RAG-powered e-commerce assistant that helps users find products using natural language queries. Built for the Neusearch AI Engineering Intern assignment.
+> **Status:** Beta 🚀
 
-## 🌟 Features
+The **Product Discovery Assistant** is an end-to-end RAG (Retrieval-Augmented Generation) e-commerce assistant designed to transform how users find products. Unlike traditional keyword search, it understands abstract natural language queries (e.g., "bed for a small room") and provides intelligent, context-aware product recommendations with visual cards.
 
--   **Natural Language Search:** Users can ask for products using everyday language (e.g., "I need a dress for a summer wedding").
--   **RAG Pipeline:** Combines vector search (Supabase pgvector) with LLM generation (Google Gemini) to provide accurate and context-aware recommendations.
-    -   **How it works:**
-        1.  **User Query:** The user submits a natural language query.
-        2.  **LLM (Query Expansion):** The query is processed by an LLM to generate synonyms and related search terms, improving search recall.
-        3.  **RAG (Vector Search):** The expanded query is converted into a vector embedding.
-        4.  **Database (Retrieval):** The embedding is used to query Supabase (pgvector) for semantically similar products.
-        5.  **LLM (Response Synthesis):** The retrieved product data and the original query are sent to the LLM to generate a natural, helpful response.
-        6.  **Response:** The final answer and product recommendations are presented to the user.
--   **Interactive Chat:** A conversational interface to refine searches and ask follow-up questions.
--   **Product Details:** View detailed product information including price, description, and features.
--   **Modern UI:** A responsive and aesthetically pleasing React frontend inspired by Hunnit.com.
+## ✨ Features
 
-## 🚀 Tech Stack
+-   **AI-Powered Search:** Uses LLMs to "reason" about user queries and translate them into effective database searches.
+-   **RAG Pipeline:** Combines vector search (Supabase pgvector) with LLM synthesis for accurate and explained results.
+-   **Visual Recommendations:** Returns rich product cards with images, prices, and details, not just text.
+-   **Modern Stack:** Built with React (Vite) for a responsive frontend and FastAPI for a high-performance backend.
 
--   **Frontend:** React, Vite, Tailwind CSS, Lucide React
--   **Backend:** Python, FastAPI
--   **Database:** Supabase (PostgreSQL + pgvector)
--   **AI/LLM:** Google Gemini (Embeddings & Chat)
--   **Data Source:** Hunnit.com (Scraped)
+## 🛠️ Prerequisites
 
-## 🏗️ Architecture
+Before you begin, ensure you have the following installed:
 
-1.  **Data Collection:** Product data is scraped from Hunnit.com and structured into JSON.
-2.  **Ingestion Pipeline:**
-    -   Reads structured JSON data.
-    -   Generates vector embeddings for product descriptions and features using `models/text-embedding-004`.
-    -   Stores product metadata and embeddings in Supabase.
-3.  **Backend API:**
-    -   FastAPI server providing endpoints for product listing and details.
-    -   Connects to Supabase for data retrieval.
-4.  **Frontend UI:**
-    -   Modern, responsive React application.
-    -   Features a clean grid layout, bold typography, and optimized product cards.
+-   **Node.js** (v18 or higher)
+-   **Python** (v3.10 or higher)
+-   **Git**
+-   **Supabase Account** (for Database & Vector Search)
+-   **Google Gemini API Key** (for LLM & Embeddings)
 
-## 🛠️ Setup & Installation
-
-### Prerequisites
-
--   Python 3.8+
--   Node.js & npm
--   Supabase Account
--   Google Cloud API Key (for Gemini)
+## 🚀 Installation
 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/Ag-Utkarsh/Product-Discovery-Assistant.git
-cd "Product Discovery Assistant"
+git clone <repository-url>
+cd product-discovery-assistant
 ```
 
 ### 2. Backend Setup
 
-1.  **Create a virtual environment:**
-    ```bash
-    cd backend
-    python -m venv venv
-    # Windows
-    venv\Scripts\activate
-    # Mac/Linux
-    source venv/bin/activate
-    ```
+Navigate to the backend directory and set up the Python environment.
 
-2.  **Install dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
+```bash
+cd backend
+python -m venv venv
 
-3.  **Environment Variables:**
-    Create a `.env` file in the `backend` directory:
-    ```env
-    SUPABASE_URL=your_supabase_url
-    SUPABASE_KEY=your_supabase_key
-    GOOGLE_API_KEY=your_google_api_key
-    ```
+# Activate Virtual Environment
+# Windows:
+venv\Scripts\activate
+# Mac/Linux:
+source venv/bin/activate
 
-4.  **Database Setup (Supabase):**
-    Run the SQL script located at `backend/app/core/setup.sql` in your Supabase SQL Editor. This will:
-    -   Enable the `vector` extension.
-    -   Create `products` and `product_embeddings` tables.
-    -   Create the `match_products` function for similarity search.
+# Install Dependencies
+pip install -r requirement.txt
+```
 
-5.  **Data Ingestion:**
-    Run the ingestion script to populate the database:
-    ```bash
-    python -m app.services.ingest_data
-    ```
+**Environment Configuration:**
+Create a `.env` file in the `backend` directory:
 
-6.  **Run the Server:**
-    ```bash
-    uvicorn app.main:app --reload --port 8000
-    ```
-    The API will be available at `http://localhost:8000`.
+```env
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_anon_key
+GOOGLE_API_KEY=your_google_api_key
+```
 
 ### 3. Frontend Setup
 
-1.  **Navigate to frontend directory:**
-    ```bash
-    cd ../frontend
-    ```
+Navigate to the frontend directory and install dependencies.
 
-2.  **Install dependencies:**
-    ```bash
-    npm install
-    ```
-
-3.  **Run the Development Server:**
-    ```bash
-    npm run dev
-    ```
-    The UI will be available at `http://localhost:5173`.
-
-## � API Reference
-
-### Products
-
--   **List Products**
-    -   `GET /products?limit=20&offset=0`
-    -   Returns a paginated list of products.
-
--   **Get Product**
-    -   `GET /products/{product_id}`
-    -   Returns details for a specific product.
-
-### Chat
-
--   **Chat with Assistant**
-    -   `POST /chat`
-    -   **Body:** `{ "query": "Find me a blue shirt" }`
-    -   **Response:**
-        ```json
-        {
-          "response": "Here are some blue shirts I found...",
-          "products": [ ... ]
-        }
-        ```
-
-## �📂 Project Structure
-
+```bash
+cd ../frontend
+npm install
 ```
-Product Discovery Assistant/
-├── backend/
-│   ├── app/
-│   │   ├── core/          # Config & DB setup
-│   │   ├── services/      # Ingestion & RAG logic
-│   │   └── main.py        # FastAPI endpoints
-│   ├── requirements.txt
-│   └── .env
-├── frontend/
-│   ├── src/
-│   │   ├── components/    # Reusable UI components
-│   │   ├── pages/         # Page views
-│   │   └── App.jsx        # Main application component
-│   └── package.json
-└── README.md
+
+**Environment Configuration:**
+Create a `.env` file in the `frontend` directory (optional if using default localhost):
+
+```env
+VITE_API_URL=http://localhost:8000
 ```
+
+## 🏃 Usage
+
+### Start the Backend Server
+
+From the `backend` directory (with venv activated):
+
+```bash
+uvicorn app.main:app --reload
+```
+The API will be available at `http://localhost:8000`.
+Documentation: `http://localhost:8000/docs`
+
+### Start the Frontend Server
+
+From the `frontend` directory:
+
+```bash
+npm run dev
+```
+The application will be available at `http://localhost:5173`.
+
+## 🧪 Testing
+
+### Backend
+Run unit tests using pytest:
+
+```bash
+cd backend
+pytest
+```
+
+### Frontend
+Run linting to check for code quality issues:
+
+```bash
+cd frontend
+npm run lint
+
+## 🤝 Contributing
+
+1.  Fork the repository.
+2.  Create a feature branch (`git checkout -b feature/amazing-feature`).
+3.  Commit your changes (`git commit -m 'Add amazing feature'`).
+4.  Push to the branch (`git push origin feature/amazing-feature`).
+5.  Open a Pull Request.

@@ -1,6 +1,5 @@
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.db import supabase
 from pydantic import BaseModel, Field
 from typing import List, Optional
 import logging
@@ -8,7 +7,9 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
-from fastapi import Request
+
+from app.services.product_service import ProductService
+from app.services import llm, rag
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -21,9 +22,16 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
 # Configure CORS
+origins = [
+    "http://localhost:5173",  # Vite default
+    "http://localhost:3000",  # Common React port (optional, keeping for flexibility if user needs it, but plan said restricted)
+    # Actually, plan said strictly 5173. Let's stick to 5173 and maybe 8000 for self.
+    "http://127.0.0.1:5173",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for development
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -55,8 +63,8 @@ async def get_products(
     List products with pagination.
     """
     try:
-        response = supabase.table("products").select("*").range(offset, offset + limit - 1).execute()
-        return response.data
+        products_data = ProductService.get_products(limit, offset)
+        return products_data
     except Exception as e:
         logger.error(f"Error fetching products: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
@@ -67,17 +75,17 @@ async def get_product(product_id: str):
     Get a single product by ID.
     """
     try:
-        response = supabase.table("products").select("*").eq("id", product_id).execute()
-        if not response.data:
+        product_data = ProductService.get_product_by_id(product_id)
+        if not product_data:
             raise HTTPException(status_code=404, detail="Product not found")
-        return response.data[0]
+        return product_data
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error fetching product {product_id}: {e}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 # --- Chat / RAG Endpoint ---
-
-from app.services import llm, rag
 
 class ChatRequest(BaseModel):
     query: str = Field(..., max_length=1000)
@@ -101,9 +109,8 @@ async def chat_endpoint(request: Request, chat_request: ChatRequest):
         logger.info(f"Original Query: {chat_request.query} -> Expanded: {expanded_query}")
         
         # 2. Vector Search
-        # Note: rag.search_products is synchronous, but fast enough for now.
-        # Ideally, run in a threadpool if it blocks.
-        products_data = rag.search_products(expanded_query)
+        # Now async!
+        products_data = await rag.search_products(expanded_query)
         
         # Convert to Pydantic models (handling potential missing fields safely)
         products = []
@@ -123,4 +130,5 @@ async def chat_endpoint(request: Request, chat_request: ChatRequest):
 
     except Exception as e:
         logger.error(f"Error in chat endpoint: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        # Sanitize error message for client
+        raise HTTPException(status_code=500, detail="An error occurred while processing your request.")
