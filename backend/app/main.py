@@ -1,15 +1,24 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.db import supabase
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List, Optional
 import logging
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from fastapi import Request
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="Product Discovery Assistant")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 # Configure CORS
 app.add_middleware(
@@ -36,7 +45,9 @@ async def read_root():
     return {"message": "Welcome to Product Discovery Assistant API"}
 
 @app.get("/products", response_model=List[Product])
+@limiter.limit("100/minute")
 async def get_products(
+    request: Request,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0)
 ):
@@ -69,14 +80,15 @@ async def get_product(product_id: str):
 from app.services import llm, rag
 
 class ChatRequest(BaseModel):
-    query: str
+    query: str = Field(..., max_length=1000)
 
 class ChatResponse(BaseModel):
     response: str
     products: List[Product]
 
 @app.post("/chat", response_model=ChatResponse)
-async def chat_endpoint(request: ChatRequest):
+@limiter.limit("5/minute")
+async def chat_endpoint(request: ChatRequest, request_obj: Request):
     """
     Handle chat requests using RAG pipeline:
     1. Expand Query (LLM)
