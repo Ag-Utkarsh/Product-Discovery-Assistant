@@ -5,6 +5,7 @@ review.md
 Neusearch AI – AI Engineering Intern Technical Assignment.pdf
 venv/
 **/__pycache__
+.pytest_cache/
 
 # Logs
 logs
