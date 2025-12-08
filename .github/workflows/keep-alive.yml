@@ -2,8 +2,8 @@ name: Keep Backend Alive
 
 on:
   schedule:
-    # Runs every 10 minutes to prevent Render free tier cold starts
-    - cron: '*/10 * * * *'
+    # Runs every 5 minutes to prevent Render free tier cold starts
+    - cron: '*/5 * * * *'
   workflow_dispatch: # Allow manual trigger for testing
 
 jobs:
@@ -15,5 +15,5 @@ jobs:
           echo "Pinging backend to prevent cold start..."
           # Ping /products to warm up both server AND Supabase connection
           curl -f -s -o /dev/null -w "Status: %{http_code}, Time: %{time_total}s\n" \
-            "${{ secrets.RENDER_BACKEND_URL }}/products?limit=1"
+            "${{ secrets.RENDER_BACKEND_URL }}"
           echo "✅ Backend and database connection warmed up!"
