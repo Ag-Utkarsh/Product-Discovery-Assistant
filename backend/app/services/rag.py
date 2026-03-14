@@ -11,6 +11,22 @@ if not GOOGLE_API_KEY:
 
 genai.configure(api_key=GOOGLE_API_KEY)
 
+def generate_embedding(text: str) -> list[float] | None:
+    """
+    Generates an embedding for a given text suitable for document storage.
+    """
+    try:
+        result = genai.embed_content(
+            model="models/gemini-embedding-001",
+            content=text,
+            task_type="retrieval_document",
+            output_dimensionality=768
+        )
+        return result['embedding']
+    except Exception as e:
+        logger.error(f"Error generating embedding: {e}")
+        return None
+
 async def search_products(query: str, match_threshold: float = 0.5, match_count: int = 5):
     """
     Searches for products using vector similarity.
@@ -21,9 +37,10 @@ async def search_products(query: str, match_threshold: float = 0.5, match_count:
         # But actually, let's use the sync method in threadpool to be safe and consistent
         result = await run_in_threadpool(
             genai.embed_content,
-            model="models/text-embedding-004",
+            model="models/gemini-embedding-001",
             content=query,
-            task_type="retrieval_query"
+            task_type="retrieval_query",
+            output_dimensionality=768
         )
         query_embedding = result['embedding']
     except Exception as e:
